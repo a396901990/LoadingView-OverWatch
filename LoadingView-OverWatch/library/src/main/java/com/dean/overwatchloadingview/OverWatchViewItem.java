@@ -1,34 +1,37 @@
-package com.dean.loadingview_overwatch;
+package com.dean.overwatchloadingview;
 
-import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.view.animation.DecelerateInterpolator;
 
 /**
  * Created by DeanGuo on 10/19/16.
  */
 
 public class OverWatchViewItem {
+
     public static final int CORNER_PATH_EFFECT_SCALE = 8;
+    public static final int ANIMATION_DURATION = 200;
     private Paint mPaint;
     private Path mPath;
-    private ValueAnimator scaleAnimator, alphaAnimator;
-    private float scale;
-    private OverWatchLoadingView overWatchLoadingView;
+    private float mScale = 0;
+    private OverWatchLoadingView mLoadingView;
     private PointF mCenterPoint;
 
+    private ValueAnimator mShowAnimation, mHideAnimation;
+
     public OverWatchViewItem(OverWatchLoadingView loadingView, PointF centerPoint, int length) {
-        overWatchLoadingView = loadingView;
+        this.mLoadingView = loadingView;
         mCenterPoint = centerPoint;
         mPaint = new Paint();
-        mPaint.setColor(Color.GREEN);
+        mPaint.setColor(mLoadingView.color);
         mPaint.setStrokeWidth(3);
-        CornerPathEffect corEffect = new CornerPathEffect(length/CORNER_PATH_EFFECT_SCALE);
+        mPaint.setAlpha(0);
+        CornerPathEffect corEffect = new CornerPathEffect(length / CORNER_PATH_EFFECT_SCALE);
         mPaint.setPathEffect(corEffect);
 
         PointF[] points = getHexagonPoints(centerPoint, length);
@@ -41,36 +44,40 @@ public class OverWatchViewItem {
         mPath.lineTo(points[6].x, points[6].y);
         mPath.close();
 
-        scaleAnimator = ValueAnimator.ofFloat(0.5f, 1);
-        scaleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                scale = (float) animation.getAnimatedValue();
-                overWatchLoadingView.invalidate();
-            }
-        });
-        scaleAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        scaleAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        scaleAnimator.setDuration(1000);
-        scaleAnimator.start();
+        initInitAnimation();
+    }
 
-        alphaAnimator = ValueAnimator.ofInt(0, 255);
-        alphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+    private void initInitAnimation() {
+        mShowAnimation = ValueAnimator.ofFloat(0, 1);
+        mShowAnimation.setDuration(ANIMATION_DURATION);
+        mShowAnimation.setInterpolator(new DecelerateInterpolator());
+        mShowAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                mPaint.setAlpha((Integer) animation.getAnimatedValue());
-                overWatchLoadingView.invalidate();
+                float animValue = (float) animation.getAnimatedValue();
+                mScale = 0.5f + animValue / 2;
+                mPaint.setAlpha((int) (animValue * 255));
+                mLoadingView.invalidate();
             }
         });
-        alphaAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        alphaAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        alphaAnimator.setDuration(1000);
-        alphaAnimator.start();
+
+        mHideAnimation = ValueAnimator.ofFloat(1, 0);
+        mHideAnimation.setDuration(ANIMATION_DURATION);
+        mHideAnimation.setInterpolator(new DecelerateInterpolator());
+        mHideAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float animValue = (float) animation.getAnimatedValue();
+                mScale = 0.5f + animValue / 2;
+                mPaint.setAlpha((int) (animValue * 255));
+                mLoadingView.invalidate();
+            }
+        });
     }
 
     public void drawViewItem(Canvas canvas) {
         canvas.save();
-        canvas.scale(scale,scale,mCenterPoint.x, mCenterPoint.y);
+        canvas.scale(mScale, mScale, mCenterPoint.x, mCenterPoint.y);
         canvas.drawPath(mPath, mPaint);
         canvas.restore();
     }
@@ -94,5 +101,24 @@ public class OverWatchViewItem {
         points[6] = new PointF(centerPoint.x - height, centerPoint.y - length / 2);
 
         return points;
+    }
+
+    public ValueAnimator getShowAnimation() {
+        return mShowAnimation;
+    }
+
+    public void reset () {
+        mScale= 0;
+        mPaint.setAlpha(0);
+        mLoadingView.invalidate();
+    }
+
+    public void setColor (int color) {
+        mPaint.setColor(color);
+        mLoadingView.invalidate();
+    }
+
+    public ValueAnimator getHideAnimation() {
+        return mHideAnimation;
     }
 }
