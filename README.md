@@ -7,6 +7,7 @@ Imitate "OverWatch" loadingView effect.
 守望先锋截图，OverWatch Screenshots：
 
 ![demo1](/screenshot/screenshot1.gif) 
+
 ![demo2](/screenshot/screenshot2.gif) 
 
 Demo Screenshots：
